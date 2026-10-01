@@ -1,0 +1,73 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<meta name="description" content="Synthetic demo of the Tremendous Platform Upgrade Gate Console: platform backlog item, cited impact packet, human gate, platform impact. No real payouts, no accounts.">
+<title>Tremendous · Platform Upgrade Gate Console (Synthetic Demo)</title>
+<link rel="stylesheet" href="styles.css">
+</head>
+<body>
+<a class="skip-link" href="#item-grid">Skip to item loader</a>
+
+<header class="topbar">
+  <div class="brand">
+    <span class="brand-mark" aria-hidden="true"></span>
+    <span class="brand-name">Tremendous</span>
+    <span class="brand-sub">Platform</span>
+  </div>
+  <span class="demo-badge" title="Synthetic demo only">Synthetic demo</span>
+</header>
+
+<main class="shell">
+  <header class="hero">
+    <p class="eyebrow">Platform roadmap · security, AI infra, compliance, upgrades</p>
+    <h1>Platform Upgrade Gate Console</h1>
+    <p class="tagline">A platform backlog item lands with its blast radius and a cited impact packet. The Platform PM picks one human gate: Ship this week, Hold for compliance evidence, Split into safer milestones, or Escalate. Nothing changes on the payout platform until a human decides. No model runs in this browser; items are pre-recorded synthetic data.</p>
+  </header>
+
+  <section class="picker card" aria-labelledby="picker-title">
+    <h2 id="picker-title">1. Load a synthetic platform item</h2>
+    <div id="item-grid" class="item-grid"></div>
+  </section>
+
+  <section id="console" class="hidden" aria-labelledby="item-title">
+    <div id="item-header" class="card"></div>
+
+    <section class="block" aria-labelledby="blast-title">
+      <h2 id="blast-title">2. Blast radius</h2>
+      <div id="blast"></div>
+    </section>
+
+    <section class="block" aria-labelledby="impact-title">
+      <h2 id="impact-title">3. Cited impact packet</h2>
+      <div id="impact"></div>
+    </section>
+
+    <section class="block" aria-labelledby="gate-title">
+      <h2 id="gate-title">4. Human gate</h2>
+      <div id="gate"></div>
+    </section>
+
+    <section id="result-block" class="block hidden" aria-labelledby="result-title">
+      <h2 id="result-title">5. Platform impact</h2>
+      <div id="result"></div>
+    </section>
+  </section>
+
+  <section class="block" aria-labelledby="kpis-title">
+    <h2 id="kpis-title">Platform health</h2>
+    <div id="kpis" class="kpis"></div>
+  </section>
+</main>
+
+<footer class="shell">
+  <p>Synthetic prototype. No real Tremendous org, no sign-in, no live payout API, no payouts sent. Built to show how ambiguous platform backlog becomes a cited gate and measurable platform impact in an async, documentation-first culture.</p>
+  <button id="reset" class="button button-quiet" type="button">Reset demo</button>
+</footer>
+
+<div id="toast" class="toast" role="status" aria-live="polite" aria-atomic="true"></div>
+<div id="live-region" class="visually-hidden" aria-live="polite"></div>
+<script src="app.js"></script>
+</body>
+</html>

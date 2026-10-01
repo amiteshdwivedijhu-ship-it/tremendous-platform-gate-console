@@ -1,0 +1,200 @@
+{
+  "items": [
+    {
+      "id": "PLAT-118",
+      "title": "Rate limit and audit log fraud model inference",
+      "area": "AI infrastructure",
+      "areaCls": "chip-purple",
+      "problem": "Fraud model inference runs on an internal endpoint with no rate limit and no per-request audit trail. A client with network access can replay scoring requests, probe the model, and land payouts before fraud checks complete. Every payout send path calls this endpoint before treasury settlement.",
+      "blast": {
+        "summary": "The fraud model sits between the send API and treasury settlement. Human gate decision changes behavior on every send path.",
+        "paths": ["API sends", "Spreadsheet sends", "Employee rewards", "Research incentives"],
+        "teams": ["Fraud", "Payouts Core", "Security", "Treasury"]
+      },
+      "impact": [
+        {
+          "kind": "Risk reduced",
+          "cls": "chip-green",
+          "label": "Fraud loss exposure",
+          "text": "Rate limit caps replay per API key; audit log records every scoring decision for post-hoc review.",
+          "cite": "Fraud ops weekly review, WK39"
+        },
+        {
+          "kind": "Compliance evidence",
+          "cls": "chip-green",
+          "label": "SOC 2 CC6.1 logging gap",
+          "text": "Per-request audit trail closes the CC6.1 logging gap flagged in the last SOC 2 readiness pass.",
+          "cite": "SOC 2 control map, CC6.1"
+        },
+        {
+          "kind": "Teams unblocked",
+          "cls": "chip-amber",
+          "label": "Fraud team",
+          "text": "Stops 3+ weekly manual investigations of anomalous replay bursts that turn out to be retries.",
+          "cite": "Fraud on-call runbook"
+        },
+        {
+          "kind": "Eng cost",
+          "cls": "chip-navy",
+          "label": "2 eng weeks",
+          "text": "Shim sits in front of the inference endpoint. Payouts Core and send paths do not change.",
+          "cite": "Eng spike notes, PLAT-118"
+        }
+      ],
+      "gate": "ship",
+      "shipOutcome": {
+        "status": "Shipped this week",
+        "chip": "chip-green",
+        "oneLine": "Fraud model inference is rate limited and fully audit logged. Open Sev count drops from 14 to 11 and payout send reliability holds at 99.98%.",
+        "kpis": { "sev": "14 to 11", "reliability": "99.98% (holds)", "cycle": "12.4d to 11.8d" },
+        "notes": ["Rate limits deployed ahead of the 2x holiday reward campaign", "Audit trail visible to fraud ops in the standard send events view"]
+      }
+    },
+    {
+      "id": "PLAT-214",
+      "title": "Restrict payout data residency for EU recipients",
+      "area": "Compliance control",
+      "areaCls": "chip-amber",
+      "problem": "EU recipient data is processed through US-region payout infrastructure. Legal requires EU data residency before EU rewards scale beyond the current pilot. This item is blocked on evidence, not on code.",
+      "blast": {
+        "summary": "EU employee rewards, research incentives, and recruitment payouts all route through the same payout processor. Proof of residency must cover every EU path, not just one.",
+        "paths": ["EU employee rewards", "EU research incentives", "Recruitment payouts"],
+        "teams": ["Privacy / Legal", "Payouts Core", "Treasury"]
+      },
+      "impact": [
+        {
+          "kind": "Compliance evidence missing",
+          "cls": "chip-amber",
+          "label": "EU data residency mapping",
+          "text": "No map shows which systems process EU recipient PII and where. Without it, the residency control cannot be scoped.",
+          "cite": "Privacy team, DPA addendum draft"
+        },
+        {
+          "kind": "Risk",
+          "cls": "chip-amber",
+          "label": "EU regulatory exposure",
+          "text": "Cross-border processing without a documented basis limits EU expansion and raises regulator questions if audited.",
+          "cite": "Legal memo EU-2026-14"
+        },
+        {
+          "kind": "Eng cost",
+          "cls": "chip-navy",
+          "label": "3 eng weeks",
+          "text": "Estimated only after evidence lands. Current estimate assumes a new EU-region processing tier.",
+          "cite": "Eng spike notes, PLAT-214"
+        }
+      ],
+      "gate": "hold",
+      "holdDocs": [
+        "EU data residency mapping: which systems process EU recipient PII and in which region",
+        "Signed DPA addendum with the payout processor covering EU-region processing",
+        "List of every send path that touches EU recipient PII, confirmed by Payouts Core"
+      ],
+      "holdOutcome": {
+        "status": "Held for compliance evidence",
+        "chip": "chip-amber",
+        "oneLine": "Item stays blocked on 3 evidence items. No engineering starts until Privacy / Legal confirms the residency map. Open Sev count is unchanged.",
+        "kpis": { "sev": "14 (unchanged)", "reliability": "99.98% (unchanged)", "cycle": "12.4d (unchanged)" },
+        "notes": ["Privacy / Legal owns the 3 evidence items", "Owners named in the item comments; this gate is reopened automatically when all 3 land"]
+      }
+    },
+    {
+      "id": "PLAT-302",
+      "title": "Move payout sends to an async worker pool",
+      "area": "Technical upgrade",
+      "areaCls": "chip-navy",
+      "problem": "The send API blocks on treasury settlement for large campaigns, so a 50k-recipient reward run ties up API workers for minutes. The full rewrite is 6 eng weeks and touches every send path plus treasury. Too large for one change.",
+      "blast": {
+        "summary": "Every send path and treasury settlement share the same API workers. A single large cutover risks a platform-wide send stall.",
+        "paths": ["API sends", "Spreadsheet sends", "Treasury settlement"],
+        "teams": ["Payouts Core", "Treasury", "Fraud"]
+      },
+      "impact": [
+        {
+          "kind": "Risk",
+          "cls": "chip-amber",
+          "label": "Large single change",
+          "text": "A 6-week cutover across all send paths is the highest-risk single change on the platform roadmap this quarter.",
+          "cite": "Eng architecture review, PLAT-302"
+        },
+        {
+          "kind": "Eng cost",
+          "cls": "chip-navy",
+          "label": "6 eng weeks",
+          "text": "Full rewrite budget. Most of the risk is in the cutover, not the worker pool itself.",
+          "cite": "Eng spike notes, PLAT-302"
+        },
+        {
+          "kind": "Teams unblocked",
+          "cls": "chip-green",
+          "label": "Send reliability",
+          "text": "Async workers remove the API blocking pattern that caused the WK34 send stall.",
+          "cite": "Incident postmortem INC-2081"
+        }
+      ],
+      "gate": "split",
+      "milestones": [
+        "M1 Read-only observability shim, ships this week, no behavior change",
+        "M2 Dual-write dry run on 5% of API sends, compared against the current path for one week",
+        "M3 Path-by-path cutover, treasury first, API sends last, each gated on the previous milestone's metrics"
+      ],
+      "splitOutcome": {
+        "status": "Split into safer milestones",
+        "chip": "chip-navy",
+        "oneLine": "Split into 3 milestones. M1 ships this week with no behavior change; M2 and M3 each gate on the previous milestone's metrics. Send reliability is protected at every step.",
+        "kpis": { "sev": "14 (unchanged)", "reliability": "99.98% (protected)", "cycle": "12.4d (unchanged)" },
+        "notes": ["M1 ships this week", "M2 and M3 scheduled after M1 metrics are reviewed"]
+      }
+    },
+    {
+      "id": "PLAT-77",
+      "title": "Rotate payout webhook signing keys",
+      "area": "Security hardening",
+      "areaCls": "chip-red",
+      "problem": "Payout webhook signing keys are 18 months old and reach consumers inside and outside the org. Rotation needs a maintenance window. Treasury wants a 2-hour window during US business hours; Payouts Core wants a 30-minute window at 2am. Both teams hold the same Friday and neither yields.",
+      "blast": {
+        "summary": "Webhook consumers depend on stable signatures. The change itself is small; the conflict is about when the window runs.",
+        "paths": ["Customer payout notifications", "Internal Slack send alerts", "Treasury reconciliation feeds"],
+        "teams": ["Treasury", "Payouts Core", "Security", "Customer success"]
+      },
+      "impact": [
+        {
+          "kind": "Risk",
+          "cls": "chip-amber",
+          "label": "Stale keys",
+          "text": "18-month-old signing keys raise replay risk if a single key leaks. Rotation is overdue on the security calendar.",
+          "cite": "Security review, WK38"
+        },
+        {
+          "kind": "Teams unblocked",
+          "cls": "chip-green",
+          "label": "Webhook consumers",
+          "text": "Consumers accepted the new key format 2 months ago. Only the window is missing.",
+          "cite": "Webhook consumer migration log"
+        },
+        {
+          "kind": "Eng cost",
+          "cls": "chip-navy",
+          "label": "1 eng day + coordination",
+          "text": "Small change. The cost is the window conflict, not the work.",
+          "cite": "Eng spike notes, PLAT-77"
+        }
+      ],
+      "gate": "escalate",
+      "escalateNote": "Handoff to Kapil Kale, Head of Product: Treasury and Payouts Core hold the same Friday and disagree on the maintenance window (2h business hours vs 30min at 2am). Decision needed this week so rotation does not slip another quarter.",
+      "escalateOutcome": {
+        "status": "Escalated to Head of Product",
+        "chip": "chip-red",
+        "oneLine": "Window conflict escalated to Kapil Kale, Head of Product, for a same-week decision. Item stays open until the window is set, then ships within a week.",
+        "kpis": { "sev": "14 (unchanged)", "reliability": "99.98% (unchanged)", "cycle": "12.4d (unchanged)" },
+        "notes": ["Escalation packet sent with both position papers attached", "Kapil decision recorded in the item comments when it lands"]
+      }
+    }
+  ],
+  "kpis": {
+    "sev": { "label": "Open Sev count", "value": "14" },
+    "reliability": { "label": "Payout send reliability", "value": "99.98%" },
+    "cycle": { "label": "Eng cycle time (avg)", "value": "12.4d" }
+  },
+  "headOfProduct": "Kapil Kale"
+}
